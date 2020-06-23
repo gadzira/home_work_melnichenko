@@ -9,40 +9,37 @@ func SplitString(s string) map[string]int {
 	resultDict := make(map[string]int)
 	str := strings.Fields(s)
 	for _, val := range str {
-		if _, found := resultDict[val]; found {
-			resultDict[val]++
-		} else {
-			resultDict[val] = 1
-		}
+		resultDict[val]++
 	}
 	return resultDict
 }
 
+type kv struct {
+	Key   string
+	Value int
+}
+
 func Top10(text string) []string {
-	if len(text) > 0 {
-		type kv struct {
-			Key   string
-			Value int
-		}
-
-		var ss []kv
-		unSortedMap := SplitString(text)
-
-		for k, v := range unSortedMap {
-			ss = append(ss, kv{k, v})
-		}
-		sort.Slice(ss, func(i, j int) bool {
-			return ss[i].Value > ss[j].Value
-		})
-
-		keyList := []string{}
-
-		for _, v := range ss {
-			keyList = append(keyList, v.Key)
-		}
-
-		top10 := keyList[0:10]
-		return top10
+	if len(text) == 0 {
+		return nil
 	}
-	return nil
+	unSortedMap := SplitString(text)
+	ss := make([]kv, len(unSortedMap))
+
+	for k, v := range unSortedMap {
+		ss = append(ss, kv{k, v})
+	}
+
+	sort.Slice(ss, func(i, j int) bool {
+		return ss[i].Value > ss[j].Value
+	})
+	keyList := make([]string, 0, len(ss))
+	for _, v := range ss {
+		keyList = append(keyList, v.Key)
+	}
+
+	if len(keyList) >= 10 {
+		return keyList[0:10]
+	}
+	return keyList
 }
