@@ -1,7 +1,6 @@
 package hw04_lru_cache //nolint:golint,stylecheck
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,11 +17,10 @@ func TestCache(t *testing.T) {
 		require.False(t, ok)
 	})
 
-	t.Run("set/get", func(t *testing.T) {
-		c := NewCache(5)
+	t.Run("set_get", func(t *testing.T) {
+		c := NewCache(1)
 
-		wasInCache := c.Set("aaa", 100)
-		require.False(t, wasInCache)
+		_ = c.Set("aaa", 100)
 
 		val, ok := c.Get("aaa")
 		require.True(t, ok)
@@ -65,7 +63,6 @@ func TestCache(t *testing.T) {
 		_ = c.Set("bbb", 200)
 		_ = c.Set("ccc", 300)
 		_ = c.Set("ddd", 400)
-
 		aaa, ok := c.Get("aaa")
 		require.Nil(t, aaa)
 		require.False(t, ok)
@@ -73,7 +70,6 @@ func TestCache(t *testing.T) {
 		ddd, ok := c.Get("ddd")
 		require.Equal(t, 400, ddd)
 		require.True(t, ok)
-
 	})
 
 	t.Run("rare elements", func(t *testing.T) {
@@ -81,25 +77,35 @@ func TestCache(t *testing.T) {
 		_ = c.Set("aaa", 100)
 		_ = c.Set("bbb", 200)
 		_ = c.Set("ccc", 300)
-		fmt.Println(c.getLen())
-		_, _ = c.Get("aaa")
-		_, _ = c.Get("aaa")
-		_ = c.Set("aaa", 567)
-		_, _ = c.Get("aaa")
-		fmt.Println(c.getLen())
-		_ = c.Set("bbb", 1200)
-		_, _ = c.Get("bbb")
+		// "ccc", "bbb", "aaa"
 
-		_ = c.Set("ddd", 400)
+		_ = c.Set("aaa", 567) // move to front - head
+		// "aaa", "ccc", "bbb"
 
-		// fmt.Println(c.getLen())
+		_ = c.Set("ddd", 400) // Push to front - head
+		//  "ddd", "aaa", "ccc"
 
+		bbb, ok := c.Get("bbb")
+		require.Nil(t, bbb)
+		require.False(t, ok)
+	})
+
+	t.Run("test Clear()", func(t *testing.T) {
+		c := NewCache(3)
+		_ = c.Set("aaa", 100)
+		_ = c.Set("bbb", 200)
+		_ = c.Set("ccc", 300)
+		c.Clear()
+		aaa, ok := c.Get("aaa")
+		require.Nil(t, aaa)
+		require.False(t, ok)
+		bbb, ok := c.Get("bbb")
+		require.Nil(t, bbb)
+		require.False(t, ok)
 		ccc, ok := c.Get("ccc")
 		require.Nil(t, ccc)
 		require.False(t, ok)
-
 	})
-
 }
 
 // func TestCacheMultithreading(t *testing.T) {

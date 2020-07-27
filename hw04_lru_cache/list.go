@@ -1,59 +1,53 @@
 package hw04_lru_cache //nolint:golint,stylecheck
 
-import "sync"
-
-// List ...
 type List interface {
-	Len() int                      // длина списка
-	Front() *Node                  // первый Item вернуть первый элемент списка
-	Back() *Node                   // последний Item вернуть последний элемент списка
-	PushFront(v interface{}) *Node // добавить значение в начало
-	PushBack(v interface{}) *Node  // добавить значение в конец
-	Remove(i *Node)                // удалить элемент
-	MoveToFront(i *Node)           // переместить элемент в начало
+	Len() int
+	Front() *Node
+	Back() *Node
+	PushFront(v interface{}) *Node
+	PushBack(v interface{}) *Node
+	Remove(i *Node)
+	MoveToFront(i *Node)
 }
 
-// Node ...
 type Node struct {
-	Prev, Next *Node
-	Value      interface{}
+	// Node - element of List
+	Prev  *Node
+	Next  *Node
+	Value interface{}
 }
 
-// Видимо тот самый двусвязанный лист
 type list struct {
-	Lock        *sync.RWMutex
+	// Double Linked list
 	front, back *Node
-	Lenght      int
+	Length      int
 }
 
-// длина списка
 func (l *list) Len() int {
-	return l.Lenght
+	// Length of list
+	return l.Length
 }
 
-// первый Item
 func (l *list) Front() *Node {
+	// First Item
 	return l.front
 }
 
-// последний Item
 func (l *list) Back() *Node {
+	// Last Item
 	return l.back
 }
 
 func (l *list) PushFront(v interface{}) *Node {
-	// l.Lock.Lock()
-	// defer l.Lock.Lock()
-
 	n := &Node{}
-	if l.Lenght == 0 {
+	if l.Length == 0 {
 		n.Prev = nil
 		n.Next = nil
 		n.Value = v
 
 		l.front = n
 		l.back = n
-		l.Lenght++
+		l.Length++
 
 		return n
 	}
@@ -69,23 +63,20 @@ func (l *list) PushFront(v interface{}) *Node {
 	if l.back == nil {
 		l.back = currentHead
 	}
-	l.Lenght++
+	l.Length++
 	return n
 }
 
 func (l *list) PushBack(v interface{}) *Node {
-	// l.Lock.Lock()
-	// defer l.Lock.Lock()
-
 	n := &Node{}
-	if l.Lenght == 0 {
+	if l.Length == 0 {
 		n.Prev = nil
 		n.Next = nil
 		n.Value = v
 
 		l.front = n
 		l.back = n
-		l.Lenght++
+		l.Length++
 		return n
 	}
 	currentBack := l.back
@@ -99,17 +90,16 @@ func (l *list) PushBack(v interface{}) *Node {
 	if l.front == nil {
 		l.front = currentBack
 	}
-	l.Lenght++
+	l.Length++
 	return n
 }
 
 func (l *list) Remove(n *Node) {
-
 	if n.Prev == nil {
 		n.Next.Prev = nil
 		n.Value = nil
 		l.front = n.Next
-		l.Lenght--
+		l.Length--
 		return
 	}
 
@@ -117,52 +107,45 @@ func (l *list) Remove(n *Node) {
 		n.Prev.Next = nil
 		n.Value = nil
 		l.back = n.Prev
-		l.Lenght--
+		l.Length--
 		return
 	}
 
 	n.Prev.Next = n.Next
 	n.Next.Prev = n.Prev
 	n.Value = nil
-	l.Lenght--
+	l.Length--
 }
 
-// переместить элемент в начало
 func (l *list) MoveToFront(n *Node) {
-
+	// Move a node to the front
 	transportNode := n
-
 	if n.Prev == nil { // that first node
 		return
 	}
 
 	if n.Next == nil { // that last node
-		// transportNode := n
+		head := l.front
+		beforeBack := l.back.Prev
+
 		transportNode.Prev.Next = nil
-
 		transportNode.Prev = nil
-		transportNode.Next = l.front
-
-		l.front.Prev = transportNode
+		transportNode.Next = head
+		head.Prev = transportNode
+		l.back = beforeBack
 		l.front = transportNode
 		return
 	}
 
-	// замыкаем prev и next друг на друга, те изымаем текущую ноду из списка
 	transportNode.Prev.Next = transportNode.Next
 	transportNode.Next.Prev = transportNode.Prev
-
-	// "делаем" перемещаемую ноду первой: а) обновляем ее указатели
 	transportNode.Prev = nil
 	transportNode.Next = l.front
-
-	// б) фиксуруем изменения в списке
 	l.front.Prev = transportNode
 	l.front = transportNode
-
 }
 
-// NewList ...
 func NewList() List {
+	// Return NewList
 	return &list{}
 }
