@@ -1,9 +1,9 @@
 package hw03_frequency_analysis //nolint:golint
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"reflect"
+	"testing"
 )
 
 // Change to true if needed
@@ -46,6 +46,16 @@ var text = `Как видите, он  спускается  по  лестни�
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
 		assert.Len(t, Top10(""), 0)
+	})
+
+	t.Run("Return only 10 elements", func(t *testing.T) {
+		assert.Len(t, Top10(text), 10)
+	})
+
+	t.Run("Return slice of string", func(t *testing.T) {
+		got := Top10(text)
+		want := make([]string, 0)
+		assert.Equal(t, reflect.TypeOf(got), reflect.TypeOf(want), "Returned object should be a slice of strings")
 	})
 
 	t.Run("positive test", func(t *testing.T) {
