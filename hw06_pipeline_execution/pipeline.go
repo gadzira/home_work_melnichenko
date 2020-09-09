@@ -24,11 +24,12 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 						return
 					}
 					bi <- v
-				default:
+					// default:
 				}
 			}
 		}(done, out)
 		out = stage(bi)
 	}
+
 	return out
 }
