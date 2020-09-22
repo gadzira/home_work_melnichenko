@@ -2,6 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
+
+	"github.com/gadzira/home_work_melnichenko/hw07_file_copying/copy"
 )
 
 var (
@@ -18,5 +21,13 @@ func init() {
 
 func main() {
 	flag.Parse()
-	// Place your code here
+	fromPath := from
+	toPath := to
+	offset := offset
+	limit := limit
+
+	err := copy.Copy(fromPath, toPath, offset, limit)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
