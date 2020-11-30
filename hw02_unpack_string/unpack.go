@@ -42,5 +42,6 @@ func Unpack(s string) (string, error) {
 			sb.WriteString(string(v))
 		}
 	}
+
 	return sb.String(), nil
 }
