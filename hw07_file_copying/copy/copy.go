@@ -1,18 +1,12 @@
 package copy
 
 import (
-	"bytes"
 	"errors"
+	"fmt"
 	"io"
-	"log"
 	"os"
 
 	"github.com/cheggaaa/pb/v3"
-)
-
-const (
-	rootDir string = "/tmp/"
-	whence  int    = 0
 )
 
 var (
@@ -21,9 +15,9 @@ var (
 )
 
 func checkRegular(fromPath string) error {
-	rf, err := os.Lstat(fromPath)
+	rf, err := os.Stat(fromPath)
 	if err != nil {
-		log.Println(err)
+		return fmt.Errorf("failed to get file stat: %w", err)
 	}
 
 	if !rf.Mode().IsRegular() {
@@ -43,14 +37,16 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	// Step 1: open file
 	file, err := os.OpenFile(fromPath, os.O_RDONLY, 0666)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
 
 	// Step 1.1: define file size
 	fs, err := file.Stat()
+	fmt.Println("File size:", fs.Size())
+	fmt.Println("Copy limit:", limit)
 	if err != nil {
-		log.Println(err)
+		return fmt.Errorf("failed to define size: %w", err)
 	}
 
 	// If offset more than file size return error
@@ -59,36 +55,31 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	}
 
 	// If limit more than file size, set limit as equal fs
-	if limit > fs.Size() || limit == 0 {
-		limit = fs.Size()
+	if limit > fs.Size()-offset || limit == 0 {
+		limit = fs.Size() - offset
 	}
 
 	// Offset: zero by default, but we always make offset
-	_, err = file.Seek(offset, whence)
+	_, err = file.Seek(offset, io.SeekStart)
 	if err != nil {
-		return err
-	}
-
-	buf := make([]byte, fs.Size()-offset)
-	if _, err := io.ReadFull(file, buf); err != nil {
-		return err
+		return fmt.Errorf("failed to make offset: %w", err)
 	}
 
 	// Step 2: Open or create file
-	out, err := os.Create(rootDir + toPath)
+	out, err := os.Create(toPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
 
 	// Step 3: Copy source file to destination file
 	bar := pb.Full.Start64(limit)
-	barReader := bar.NewProxyReader(bytes.NewReader(buf))
+	barReader := bar.NewProxyReader(file)
 	_, err = io.CopyN(out, barReader, limit)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to copy file: %w", err)
 	}
-	bar.Finish()
+	defer bar.Finish()
 
 	return nil
 }

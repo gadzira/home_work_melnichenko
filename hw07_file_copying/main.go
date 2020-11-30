@@ -2,7 +2,7 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"log"
 
 	"github.com/gadzira/home_work_melnichenko/hw07_file_copying/copy"
 )
@@ -21,13 +21,9 @@ func init() {
 
 func main() {
 	flag.Parse()
-	fromPath := from
-	toPath := to
-	offset := offset
-	limit := limit
 
-	err := copy.Copy(fromPath, toPath, offset, limit)
+	err := copy.Copy(from, to, offset, limit)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 }

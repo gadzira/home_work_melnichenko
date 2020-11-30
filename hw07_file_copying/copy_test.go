@@ -5,10 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/gadzira/home_work_melnichenko/hw07_file_copying/copy"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type test struct {
@@ -22,20 +23,15 @@ type test struct {
 func TestCopy(t *testing.T) {
 
 	t.Run("If offset more than file size", func(t *testing.T) {
-		actualErr := copy.Copy("./testdata/input.txt", "output.txt", 7000, 25)
+		err := copy.Copy("./testdata/input.txt", "output.txt", 7000, 25)
 		expectedErr := errors.New("offset exceeds file size")
-		if assert.Error(t, actualErr) {
-			assert.Equal(t, expectedErr, actualErr)
-		}
+		require.Equal(t, expectedErr, err)
 	})
 
 	t.Run("If file unknown length", func(t *testing.T) {
-		actualErr := copy.Copy("/dev/urandom", "output.txt", 0, 0)
+		err := copy.Copy("/dev/urandom", "output.txt", 0, 0)
 		expectedErr := errors.New("unsupported file")
-
-		if assert.Error(t, actualErr) {
-			assert.Equal(t, expectedErr, actualErr)
-		}
+		require.Equal(t, expectedErr, err)
 	})
 
 	for _, tst := range [...]test{
@@ -86,8 +82,9 @@ func TestCopy(t *testing.T) {
 			_ = copy.Copy(tst.in, tst.out, tst.offset, tst.limit)
 			out, _ := ioutil.ReadFile(tst.out)
 			golden, _ := ioutil.ReadFile(tst.golden)
+			defer os.Remove(tst.out)
 
-			if bytes.Equal(out, golden) {
+			if !bytes.Equal(out, golden) {
 				t.Errorf("incoming file and outcomming file not matched")
 			}
 		})
