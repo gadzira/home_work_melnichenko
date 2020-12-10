@@ -1,56 +1,29 @@
 package hw09_struct_validator //nolint:golint,stylecheck
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 )
 
-type UserRole string
-
 // Test the function on different structures and other types.
-type (
-	User struct {
-		ID     string `json:"id" validate:"len:36"`
-		Name   string
-		Age    int      `validate:"min:18|max:50"`
-		Email  string   `validate:"regexp:^\\w+@\\w+\\.\\w+$"`
-		Role   UserRole `validate:"in:admin,stuff"`
-		Phones []string `validate:"len:11"`
-		meta   json.RawMessage
-	}
+type TestStruct struct {
+	ID   string `json:"id" validate:"len:36"`
+	Name string
+	Age  int `validate:"min:18|max:50"`
+}
 
-	App struct {
-		Version string `validate:"len:5"`
-	}
+var tstStruct1 = TestStruct{
+	ID:   "f2223b6a-398d-11eb-adc1-0242ac120002",
+	Name: "Bob Ross",
+	Age:  37,
+}
 
-	Token struct {
-		Header    []byte
-		Payload   []byte
-		Signature []byte
-	}
-
-	Response struct {
-		Code int    `validate:"in:200,404,500"`
-		Body string `json:"omitempty"`
-	}
-)
+var tstStruct2 = 1
 
 func TestValidate(t *testing.T) {
-	tests := []struct {
-		in          interface{}
-		expectedErr error
-	}{
-		{
-			// Place your code here
-		},
-		// ...
-		// Place your code here
-	}
 
-	for i, tt := range tests {
-		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
-			// Place your code here
-		})
+	err := Validate(tstStruct1)
+	if err != nil {
+		fmt.Errorf("Something go wrong: %w", err)
 	}
 }
