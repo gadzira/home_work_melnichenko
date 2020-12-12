@@ -4,13 +4,19 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
-const digit = `[0-9]+`
-
-// const pattern = `^[A-Za-z0-9_\.]+`
-// var alphaNum = regexp.MustCompile(pattern)
+var (
+	ErrLen      = errors.New("length is invalid")
+	ErrMatched  = errors.New("not matched with regexp")
+	ErrIncluded = errors.New("not included in the set")
+	ErrMin      = errors.New("incoming value is low than a minimum limit")
+	ErrMax      = errors.New("incoming value is more than a maximum limit")
+	ErrDefault  = errors.New("unsupported type of validator")
+)
 
 type ValidationError struct {
 	Field string
@@ -22,116 +28,137 @@ type ValidationErrors []ValidationError
 func (v ValidationErrors) Error() string {
 	var errorString string
 	for _, err := range v {
-		errorString += fmt.Sprintf("Field: %s \t Error: %s\n", err.Field, err.Err)
+		errorString += fmt.Sprintf("Field: %s Error: %s", err.Field, err.Err)
 	}
 
 	return errorString
 }
 
 func Validate(v interface{}) error {
-
-	// Check object is exist
+	var listOfErrors ValidationErrors
 	if v == nil {
-		return errors.New("Empty object")
+		return errors.New("empty object")
 	}
-
-	// Check if obj is struct
 	if reflect.ValueOf(v).Kind() != reflect.Struct {
-		return errors.New("Object is not a Struct")
+		return errors.New("object is not a Struct")
 	}
 
 	st := reflect.ValueOf(v).Type()
-
-	var lineToValidate []string
 	for i := 0; i < st.NumField(); i++ {
 		f := st.Field(i)
 		t := f.Tag.Get("validate")
-
+		// nolint:nestif
 		if t != "" {
-			// fmt.Println("Field:", reflect.ValueOf(v).Type().Field(i).Name,
-			// 	"Value:", reflect.ValueOf(v).Field(i).Interface(),
-			// 	"Tag:", t)
-			lineToValidate = append(lineToValidate, t)
 			field := reflect.ValueOf(v).Type().Field(i).Name
 			value := reflect.ValueOf(v).Field(i).Interface()
 			tag := t
-			// listOfValidationErrors := validateElement(field, value, tag)
-			_ = validateElement(field, value, tag)
-			// listOfValidationErrors := validateElement(reflect.ValueOf(v).Type().Field(i).Name, reflect.ValueOf(v).Field(i).Interface(), t)
-			// fmt.Println(listOfValidationErrors)
+			if reflect.TypeOf(value).Kind() != reflect.Slice {
+				resultOfValidation, ok := validateElement(field, value, tag)
+				if ok {
+					listOfErrors = append(listOfErrors, resultOfValidation)
+				}
+			}
+			if reflect.TypeOf(value).Kind() == reflect.Slice {
+				s := reflect.ValueOf(value)
+				for i := 0; i < s.Len(); i++ {
+					ss := s.Index(i).Interface()
+					resultOfValidation, ok := validateElement(field, ss, tag)
+					if ok {
+						listOfErrors = append(listOfErrors, resultOfValidation)
+					}
+				}
+			}
 		}
 	}
+	if len(listOfErrors) > 0 {
+		err := fmt.Errorf(listOfErrors.Error())
+
+		return err
+	}
+
 	return nil
 }
 
-func validateElement(f string, v interface{}, t string) ValidationErrors {
-	// if reflect.ValueOf(v).Kind() == reflect.String {
-	// fmt.Println("It is a", reflect.TypeOf(v).String(), reflect.ValueOf(v))
-	// }
-
-	// if reflect.ValueOf(v).Kind() == reflect.Int {
-	// fmt.Println("It is a", reflect.TypeOf(v).String(), reflect.ValueOf(v))
-	// }
-
-	// Split string by |
+// nolint:funlen
+func validateElement(f string, v interface{}, t string) (ValidationError, bool) {
+	var resultOfValidation ValidationError
 	listOfValidators := strings.Split(t, "|")
 	for _, j := range listOfValidators {
-		// fmt.Printf("v:%s\n", v)
-		t := getTag(j)
-		switch t {
+		st := getTag(j)
+		switch st {
 		case "len":
-			fmt.Println("Call len validator for:", v)
-			fmt.Println("Print tag:", j)
-			//нужно получить цифру
-			// var d = regexp.MustCompile(digit)
-			// length := d.FindString(j)
-			// lenInt, _ := strconv.Atoi(length)
-			// if len((v.(string)) > length {
-			// 	fmt.Println("ff")
-			// }
-
 			var i int
 			fmt.Sscanf(j, "len:%5d", &i)
-			fmt.Println(i)
 			str := fmt.Sprintf("%v", v)
-			if len(str) > i {
-				fmt.Printf("Lenght of %s more than %d", f, i)
+			if len(str) != i {
+				resultOfValidation.Field = f
+				resultOfValidation.Err = ErrLen
 			}
-
 		case "regexp":
-			fmt.Println("Call regexp validator for:", v)
+			r := strings.Split(j, ":")[1]
+			re := regexp.MustCompile(r)
+			if !re.MatchString(v.(string)) {
+				resultOfValidation.Field = f
+				resultOfValidation.Err = ErrMatched
+			}
 		case "in":
-			fmt.Println("Call in validator for:", v)
+			fs := strings.Split(j, ":")[1]
+			ss := strings.Split(fs, ",")
+			t := reflect.TypeOf(v).String()
+			switch t {
+			case "int":
+				vt := v.(int)
+				vs := strconv.Itoa(vt)
+				if !stringInSlice(vs, ss) {
+					resultOfValidation.Field = f
+					resultOfValidation.Err = ErrIncluded
+				}
+			default:
+				vs := fmt.Sprintf("%s", v)
+				if !stringInSlice(vs, ss) {
+					resultOfValidation.Field = f
+					resultOfValidation.Err = ErrIncluded
+				}
+			}
 		case "min":
-			fmt.Println("Call min validator for:", v)
+			var i int
+			fmt.Sscanf(j, "min:%5d", &i)
+			if v.(int) < i {
+				resultOfValidation.Field = f
+				resultOfValidation.Err = ErrMin
+			}
 		case "max":
-			fmt.Println("Call max validator for:", v)
+			var i int
+			fmt.Sscanf(j, "max:%5d", &i)
+			if v.(int) > i {
+				resultOfValidation.Field = f
+				resultOfValidation.Err = ErrMax
+			}
 		default:
-			fmt.Println("Unsupported type")
+			resultOfValidation.Field = f
+			resultOfValidation.Err = ErrDefault
 		}
 	}
-	var rr ValidationErrors
-	return rr
+	if resultOfValidation.Err != nil {
+		return resultOfValidation, true
+	}
 
+	return resultOfValidation, false
 }
 
-// I'm not proud of it
 func getTag(s string) string {
-	var v string
-	if strings.Contains(s, "len") {
-		v = "len"
+	var v []string
+	v = strings.Split(s, ":")
+
+	return v[0]
+}
+
+func stringInSlice(a interface{}, list []string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
 	}
-	if strings.Contains(s, "regexp") {
-		v = "regexp"
-	}
-	if strings.Contains(s, "in") {
-		v = "in"
-	}
-	if strings.Contains(s, "min") {
-		v = "min"
-	}
-	if strings.Contains(s, "max") {
-		v = "max"
-	}
-	return v
+
+	return false
 }
