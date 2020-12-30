@@ -3,19 +3,26 @@ package hw09_struct_validator //nolint:golint,stylecheck
 import (
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
+const (
+	validate = "validate"
+)
+
 var (
-	ErrLen      = errors.New("length is invalid")
-	ErrMatched  = errors.New("not matched with regexp")
-	ErrIncluded = errors.New("not included in the set")
-	ErrMin      = errors.New("incoming value is low than a minimum limit")
-	ErrMax      = errors.New("incoming value is more than a maximum limit")
-	ErrDefault  = errors.New("unsupported type of validator")
+	ErrLen       = errors.New("length is invalid")
+	ErrMatched   = errors.New("not matched with regexp")
+	ErrIncluded  = errors.New("not included in the set")
+	ErrMin       = errors.New("incoming value is low than a minimum limit")
+	ErrMax       = errors.New("incoming value is more than a maximum limit")
+	ErrDefault   = errors.New("unsupported type of validator")
+	ErrNotStruct = errors.New("object is not a struct")
+	ErrEmptyCond = errors.New("conditions not set")
 )
 
 type ValidationError struct {
@@ -26,27 +33,33 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-	var errorString string
+	var errorString strings.Builder
 	for _, err := range v {
-		errorString += fmt.Sprintf("Field: %s Error: %s", err.Field, err.Err)
+		errorString.WriteString("Field: ")
+		errorString.WriteString(err.Field)
+		errorString.WriteString(" Error msg: ")
+		errorString.WriteString(err.Err.Error())
+		errorString.WriteString("\n")
 	}
 
-	return errorString
+	return errorString.String()
 }
 
 func Validate(v interface{}) error {
-	var listOfErrors ValidationErrors
 	if v == nil {
-		return errors.New("empty object")
+		return nil
 	}
-	if reflect.ValueOf(v).Kind() != reflect.Struct {
-		return errors.New("object is not a Struct")
+	tmpVal := reflect.Indirect(reflect.ValueOf(v))
+	// let's check incomming value
+	tt := tmpVal.Interface()
+	if reflect.TypeOf(tt).Kind() != reflect.Struct {
+		return fmt.Errorf("%w: %T", ErrNotStruct, tt)
 	}
-
-	st := reflect.ValueOf(v).Type()
+	var listOfErrors ValidationErrors
+	st := reflect.ValueOf(tmpVal).Type()
 	for i := 0; i < st.NumField(); i++ {
 		f := st.Field(i)
-		t := f.Tag.Get("validate")
+		t := f.Tag.Get(validate)
 		// nolint:nestif
 		if t != "" {
 			field := reflect.ValueOf(v).Type().Field(i).Name
@@ -57,8 +70,7 @@ func Validate(v interface{}) error {
 				if ok {
 					listOfErrors = append(listOfErrors, resultOfValidation)
 				}
-			}
-			if reflect.TypeOf(value).Kind() == reflect.Slice {
+			} else {
 				s := reflect.ValueOf(value)
 				for i := 0; i < s.Len(); i++ {
 					ss := s.Index(i).Interface()
@@ -70,8 +82,9 @@ func Validate(v interface{}) error {
 			}
 		}
 	}
+
 	if len(listOfErrors) > 0 {
-		err := fmt.Errorf(listOfErrors.Error())
+		err := fmt.Errorf("%w", listOfErrors)
 
 		return err
 	}
@@ -79,7 +92,7 @@ func Validate(v interface{}) error {
 	return nil
 }
 
-// nolint:funlen
+// nolint:funlen,gocognit
 func validateElement(f string, v interface{}, t string) (ValidationError, bool) {
 	var resultOfValidation ValidationError
 	listOfValidators := strings.Split(t, "|")
@@ -88,36 +101,49 @@ func validateElement(f string, v interface{}, t string) (ValidationError, bool) 
 		switch st {
 		case "len":
 			var i int
-			fmt.Sscanf(j, "len:%5d", &i)
+			_, err := fmt.Sscanf(j, "len:%5d", &i)
+			if err != nil {
+				log.Fatal("case 'len': something goes wrong:", err)
+			}
 			str := fmt.Sprintf("%v", v)
 			if len(str) != i {
 				resultOfValidation.Field = f
 				resultOfValidation.Err = ErrLen
 			}
 		case "regexp":
-			r := strings.Split(j, ":")[1]
+			sl := strings.Split(j, ":")
+			if len(sl) < 2 {
+				log.Fatal("conditions not set")
+			}
+			r := sl[1]
 			re := regexp.MustCompile(r)
 			if !re.MatchString(v.(string)) {
 				resultOfValidation.Field = f
 				resultOfValidation.Err = ErrMatched
 			}
 		case "in":
-			fs := strings.Split(j, ":")[1]
+			sl := strings.Split(j, ":")
+			if len(sl) < 2 {
+				log.Fatal("conditions not set")
+			}
+			fs := sl[1]
 			ss := strings.Split(fs, ",")
 			t := reflect.TypeOf(v).String()
 			switch t {
 			case "int":
-				vt := v.(int)
-				vs := strconv.Itoa(vt)
-				if !stringInSlice(vs, ss) {
-					resultOfValidation.Field = f
-					resultOfValidation.Err = ErrIncluded
+				vt, ok := v.(int)
+				if ok {
+					vs := strconv.Itoa(vt)
+					if !stringInSlice(vs, ss) {
+						resultOfValidation.Field = f
+						resultOfValidation.Err = ErrIncluded
+					}
 				}
 			default:
 				vs := fmt.Sprintf("%s", v)
 				if !stringInSlice(vs, ss) {
 					resultOfValidation.Field = f
-					resultOfValidation.Err = ErrIncluded
+					resultOfValidation.Err = ErrDefault
 				}
 			}
 		case "min":
@@ -135,7 +161,7 @@ func validateElement(f string, v interface{}, t string) (ValidationError, bool) 
 				resultOfValidation.Err = ErrMax
 			}
 		default:
-			resultOfValidation.Field = f
+			resultOfValidation.Field = "-"
 			resultOfValidation.Err = ErrDefault
 		}
 	}

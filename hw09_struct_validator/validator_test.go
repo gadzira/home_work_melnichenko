@@ -2,7 +2,7 @@ package hw09_struct_validator //nolint:golint,stylecheck
 
 import (
 	"encoding/json"
-	"strings"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,6 +35,15 @@ type (
 	Response struct {
 		Code int    `validate:"in:200,404,500"`
 		Body string `json:"omitempty"`
+	}
+
+	BrokenResponse struct {
+		Code int    `validate:""`
+		Body string `json:"omitempty"`
+	}
+
+	EmptyStruct struct {
+		EmptyField string `validate:"actually_empty_tag"`
 	}
 )
 
@@ -82,6 +91,10 @@ var fresponse = Response{
 	Body: "Good luck with that",
 }
 
+var justEmptyStruct = EmptyStruct{
+	EmptyField: "",
+}
+
 func TestValidatePositive(t *testing.T) {
 	tests := []struct {
 		name string
@@ -117,36 +130,73 @@ func TestValidateNegative(t *testing.T) {
 	tests := []struct {
 		name          string
 		in            interface{}
-		expectedError string
+		expectedField string
+		expectedError error
 	}{
 		{
 			name:          "fail user",
 			in:            fuser,
-			expectedError: "incoming value is more than a maximum limit",
+			expectedField: "Age",
+			expectedError: ErrMax,
 		},
 		{
 			name:          "fail app",
 			in:            fapp,
-			expectedError: "length is invalid",
+			expectedField: "Version",
+			expectedError: ErrLen,
 		},
 		{
 			name:          "fail response",
 			in:            fresponse,
-			expectedError: "not included in the set",
+			expectedField: "Code",
+			expectedError: ErrIncluded,
+		},
+		{
+			name:          "Empty struct",
+			in:            justEmptyStruct,
+			expectedField: "-",
+			expectedError: ErrDefault,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Validate(tt.in)
-			require.Equal(t, tt.expectedError, getErrMsg(err))
+
+			var errs ValidationErrors
+			if errors.As(err, &errs) {
+				for i := range errs {
+					require.Equal(t, tt.expectedField, errs[i].Field)
+					require.True(t, errors.Is(errs[i].Err, tt.expectedError), "actual: %v", errs[i].Err)
+				}
+
+			}
 		})
 	}
 }
 
-// I'm ashamed, but I don't regret for the code below
-func getErrMsg(e error) string {
-	s := e.Error()
-	mes := strings.Split(s, ":")
-	return strings.TrimSpace(mes[len(mes)-1])
+func TestValidateNil(t *testing.T) {
+	err := Validate(nil)
+	require.Nil(t, err, "expect nil, actual: %v", err)
+}
+func TestValidatePointer(t *testing.T) {
+	v := Response{200, "ok"}
+	err := Validate(&v)
+	require.NoError(t, err, "expect no error, actual: %v", err)
+}
+
+func TestValidateNotConditions(t *testing.T) {
+	r := BrokenResponse{500, "Internal Server Error"}
+	err := Validate(r)
+	require.Nil(t, err, "expect nil, actual: %v", err)
+}
+
+func TestValidateInt(t *testing.T) {
+	err := Validate(7)
+	require.True(t, errors.Is(err, ErrNotStruct), "actual: %v", err)
+}
+
+func TestValidateString(t *testing.T) {
+	err := Validate("A")
+	require.True(t, errors.Is(err, ErrNotStruct), "actual: %v", err)
 }
