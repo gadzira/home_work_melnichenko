@@ -1,6 +1,7 @@
 package hw06_pipeline_execution //nolint:golint,stylecheck
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -52,6 +53,7 @@ func TestPipeline(t *testing.T) {
 		for s := range ExecutePipeline(in, nil, stages...) {
 			result = append(result, s.(string))
 		}
+
 		elapsed := time.Since(start)
 
 		require.Equal(t, result, []string{"102", "104", "106", "108", "110"})
@@ -73,6 +75,38 @@ func TestPipeline(t *testing.T) {
 			close(done)
 		}()
 
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		start := time.Now()
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(string))
+		}
+		elapsed := time.Since(start)
+
+		require.Len(t, result, 0)
+		require.Less(t, int64(elapsed), int64(abortDur)+int64(fault))
+	})
+
+	t.Run("let's test timeout", func(t *testing.T) {
+		in := make(Bi)
+		done := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		// Abort after 200ms
+		abortDur := sleepPerStage * 2
+		go func() {
+			<-time.After(abortDur)
+			fmt.Println("You are working too slow")
+			close(done)
+		}()
+		// Let's sleep here
+		time.Sleep(time.Second * 5)
 		go func() {
 			for _, v := range data {
 				in <- v
