@@ -36,4 +36,23 @@ func TestGetDomainStat(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, DomainStat{}, result)
 	})
+
+	t.Run("empty data", func(t *testing.T) {
+		emptydata := `{}`
+		result, err := GetDomainStat(bytes.NewBufferString(emptydata), "")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{}, result)
+	})
+
+	t.Run("invalid json", func(t *testing.T) {
+		errdata := `{"Id":6,"Name":"First Name","Username":"ugnetator1","Email":"sssddd@browsecat.com","Phone":"8-974-394-34-11","Password":"SiZLeNSGn","Address":"Fulton Hill 80"}
+				{"Id":7,"Name":"Second Name","Username":"ugnetator2","Email":"rrrttt@linktype.com","Phone":8-495-224-22-22,"Password":"acSBF5","Address":"Russell Trail 61"}
+				{"Id":8,"Name":"Third Name","Username":"ugnetator3","Email":"uuuiii@linktype.com","Phone":"8-495-224-22-22","Password":"tyVBN9","Address":"Monterey Park 39"}`
+		result, err := GetDomainStat(bytes.NewBufferString(errdata), "com")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"browsecat.com": 1,
+			"linktype.com":  1,
+		}, result)
+	})
 }
