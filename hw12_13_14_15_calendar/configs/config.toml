@@ -1,0 +1,17 @@
+[logger]
+level = "INFO"
+logfile = "calendar.log"
+MaxSize = 1024
+MaxBackups = 3
+MaxAge = 7
+Compress = true
+
+[server]
+ip = "127.0.0.1"
+port = "8800"
+
+[mode]
+m = "database"
+
+[database]
+dsn = "host=localhost port=5432 user=postgres password=dbpass dbname=eventsdb sslmode=disable"
