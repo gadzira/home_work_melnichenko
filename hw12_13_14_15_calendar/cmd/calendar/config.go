@@ -41,7 +41,7 @@ type database struct {
 }
 
 func NewConfig(fileName string) Config {
-	var confDir = "../../configs"
+	var confDir = "../../configs" // nolint:gofumpt
 	conFile := filepath.Join(confDir, fileName)
 
 	var config Config

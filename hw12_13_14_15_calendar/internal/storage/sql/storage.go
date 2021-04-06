@@ -111,6 +111,7 @@ func (s *Storage) MonthListOfEvents(ctx context.Context) ([]storage.Event, error
 }
 
 func (s *Storage) getEventsForPeriod(ctx context.Context, y, m, d int) ([]storage.Event, error) {
+	// nolint:gofumpt
 	var cdf = time.Now().Format("2006-01-02")
 	var cd = time.Now()
 	var nextDay = cd.AddDate(y, m, d)

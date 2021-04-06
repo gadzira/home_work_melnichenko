@@ -125,6 +125,7 @@ func (s *Storage) WeekListOfEvents(_ context.Context) ([]storage.Event, error) {
 			listOfEvents = append(listOfEvents, i)
 		}
 	}
+
 	return listOfEvents, nil
 }
 
@@ -144,6 +145,7 @@ func (s *Storage) MonthListOfEvents(_ context.Context) ([]storage.Event, error) 
 func (s *Storage) NewID() int {
 	newID := s.prevID
 	newID++
+
 	return newID
 }
 
@@ -162,5 +164,6 @@ func (s *Storage) isTimeFree(ownerID string, timeToCheck time.Time) error {
 			return storage.ErrDateBusy
 		}
 	}
+
 	return nil
 }
