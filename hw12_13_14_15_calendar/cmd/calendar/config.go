@@ -48,6 +48,7 @@ func NewConfig(fileName string) Config {
 	if _, err := toml.DecodeFile(conFile, &config); err != nil {
 		log.Fatal("Can't load configuration file:", err)
 	}
+
 	return Config{
 		Server:   config.Server,
 		Logger:   config.Logger,
