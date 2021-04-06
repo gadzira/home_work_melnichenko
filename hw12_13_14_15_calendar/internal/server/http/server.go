@@ -14,10 +14,7 @@ type Server struct {
 	l *zap.Logger
 }
 
-type Application interface {
-	// TODO: some methods for create or modify events
-
-}
+type Application interface{}
 
 func NewServer(app Application, log *zap.Logger) *Server {
 	// nolint:exhaustivestruct

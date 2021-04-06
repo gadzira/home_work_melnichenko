@@ -52,14 +52,21 @@ func (s *Storage) AddEvent(ctx context.Context, e *storage.Event) error {
 	if err != nil {
 		return fmt.Errorf("cannot insert: %w", err)
 	}
+
 	return nil
 }
 
 func (s *Storage) EditEvent(ctx context.Context, e *storage.Event) error {
 	_, err := s.db.ExecContext(
 		ctx, `UPDATE  events SET title = $2, start_time = $3, end_time = $4, duration = $5, description = $6, owner_id = $7, remind_time = $8 WHERE id = $1`,
-		e.ID, e.Title, e.StartTime, e.EndTime, e.Duration, e.Description, e.OwnerID, e.RemindTime)
-
+		e.ID,
+		e.Title,
+		e.StartTime,
+		e.EndTime,
+		e.Duration,
+		e.Description,
+		e.OwnerID,
+		e.RemindTime)
 	if err != nil {
 		return fmt.Errorf("cannot insert: %w", err)
 	}
@@ -81,6 +88,7 @@ func (s *Storage) DayListOfEvents(ctx context.Context) ([]storage.Event, error) 
 	if err != nil {
 		return nil, err
 	}
+
 	return eventListForDay, nil
 }
 
@@ -106,7 +114,7 @@ func (s *Storage) getEventsForPeriod(ctx context.Context, y, m, d int) ([]storag
 	var cdf = time.Now().Format("2006-01-02")
 	var cd = time.Now()
 	var nextDay = cd.AddDate(y, m, d)
-	ndf := nextDay.Format("2006-01-02")
+	var ndf = nextDay.Format("2006-01-02")
 
 	rows, err := s.db.QueryContext(ctx, `SELECT title, start_time, end_time, duration, description, owner_id, remind_time FROM events WHERE start_time>=$1 AND start_time<$2 ORDER BY start_time`, cdf, ndf)
 	if err != nil {
@@ -125,6 +133,7 @@ func (s *Storage) getEventsForPeriod(ctx context.Context, y, m, d int) ([]storag
 		}
 		listOfEvents = append(listOfEvents, e)
 	}
+
 	return listOfEvents, nil
 }
 
