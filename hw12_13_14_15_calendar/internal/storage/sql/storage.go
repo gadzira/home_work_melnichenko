@@ -2,18 +2,18 @@ package sqlstorage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"database/sql"
-
 	"github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/storage"
-	"go.uber.org/zap"
 
-	// import psql driver
+	// import psql driver.
 	_ "github.com/jackc/pgx/v4/stdlib"
+	"go.uber.org/zap"
 )
 
+// nolint:exhaustivestruct
 type Storage struct {
 	db *sql.DB
 	l  *zap.Logger
@@ -63,6 +63,7 @@ func (s *Storage) EditEvent(ctx context.Context, e *storage.Event) error {
 	if err != nil {
 		return fmt.Errorf("cannot insert: %w", err)
 	}
+
 	return nil
 }
 
@@ -71,6 +72,7 @@ func (s *Storage) RemoveEvent(ctx context.Context, id string) error {
 	if err != nil {
 		return fmt.Errorf("cannot delete: %w", err)
 	}
+
 	return nil
 }
 
@@ -87,6 +89,7 @@ func (s *Storage) WeekListOfEvents(ctx context.Context) ([]storage.Event, error)
 	if err != nil {
 		return nil, err
 	}
+
 	return eventListForWeek, nil
 }
 
@@ -95,6 +98,7 @@ func (s *Storage) MonthListOfEvents(ctx context.Context) ([]storage.Event, error
 	if err != nil {
 		return nil, err
 	}
+
 	return eventListForMonth, nil
 }
 

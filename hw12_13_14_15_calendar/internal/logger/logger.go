@@ -17,16 +17,18 @@ type Logger struct {
 	MaxSize    int
 	MaxBackups int
 	MaxAge     int
+	LocalTime  bool
 	Compress   bool
 }
 
-func New(filename, loglevel string, maxsize, maxbackups, maxage int, compress bool) *Logger {
+func New(filename, loglevel string, maxsize, maxbackups, maxage int, localtime bool, compress bool) *Logger {
 	return &Logger{
 		FileName:   filename,
 		LogLevel:   loglevel,
 		MaxSize:    maxsize,
 		MaxBackups: maxbackups,
 		MaxAge:     maxage,
+		LocalTime:  localtime,
 		Compress:   compress,
 	}
 }

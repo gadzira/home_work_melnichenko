@@ -4,6 +4,7 @@ logfile = "calendar.log"
 MaxSize = 1024
 MaxBackups = 3
 MaxAge = 7
+LocalTime = true
 Compress = true
 
 [server]

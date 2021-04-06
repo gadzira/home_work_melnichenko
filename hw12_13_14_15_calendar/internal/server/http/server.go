@@ -20,6 +20,7 @@ type Application interface {
 }
 
 func NewServer(app Application, log *zap.Logger) *Server {
+	// nolint:exhaustivestruct
 	return &Server{
 		Application: app,
 		l:           log,

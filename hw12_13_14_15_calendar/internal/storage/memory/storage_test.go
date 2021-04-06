@@ -20,6 +20,7 @@ func TestStorage(t *testing.T) {
 		1,
 		1,
 		true,
+		true,
 	)
 	logg := l.InitLogger()
 	s := New(logg)

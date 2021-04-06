@@ -23,6 +23,7 @@ type LoggerConf struct {
 	MaxSize    int
 	MaxBackups int
 	MaxAge     int
+	LocalTime  bool
 	Compress   bool
 }
 

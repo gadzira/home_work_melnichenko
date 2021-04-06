@@ -43,6 +43,7 @@ func main() {
 		config.Logger.MaxSize,
 		config.Logger.MaxBackups,
 		config.Logger.MaxAge,
+		config.Logger.LocalTime,
 		config.Logger.Compress,
 	)
 
@@ -101,6 +102,6 @@ func main() {
 	if err := server.Start(ctx, adr); err != nil {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
-		os.Exit(1)
+		os.Exit(1) //nolint:gocritic
 	}
 }
