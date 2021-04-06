@@ -13,13 +13,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// nolint:exhaustivestruct
 type Storage struct {
 	db *sql.DB
 	l  *zap.Logger
 }
 
 func New(log *zap.Logger) storage.Storage {
+	// nolint:exhaustivestruct
 	return &Storage{
 		l: log,
 	}

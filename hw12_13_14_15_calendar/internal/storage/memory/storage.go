@@ -58,6 +58,7 @@ func (s *Storage) AddEvent(_ context.Context, e *storage.Event) error {
 		RemindTime:  e.RemindTime,
 	}
 	s.prevID = newid
+
 	return nil
 }
 
@@ -98,8 +99,10 @@ func (s *Storage) RemoveEvent(_ context.Context, id string) error {
 	}
 
 	delete(s.event, idInt)
+
 	return nil
 }
+
 func (s *Storage) DayListOfEvents(_ context.Context) ([]storage.Event, error) {
 	var listOfEvents []storage.Event
 	curDay := time.Now().UTC()
@@ -109,6 +112,7 @@ func (s *Storage) DayListOfEvents(_ context.Context) ([]storage.Event, error) {
 			listOfEvents = append(listOfEvents, i)
 		}
 	}
+
 	return listOfEvents, nil
 }
 

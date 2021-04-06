@@ -7,10 +7,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type App struct {
-	// logger  logger.Logger
-	// storage storage.Storage
-}
+type App struct{}
 
 type Logger interface {
 	// TODO: Add more levels

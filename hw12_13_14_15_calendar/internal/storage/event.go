@@ -6,9 +6,7 @@ import (
 	"time"
 )
 
-var (
-	ErrDateBusy = errors.New("date is busy")
-)
+var ErrDateBusy = errors.New("date is busy")
 
 type Storage interface {
 	Connect(ctx context.Context, dsn string) error

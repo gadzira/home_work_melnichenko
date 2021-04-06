@@ -43,6 +43,7 @@ func (l *Logger) InitLogger() *zap.Logger {
 		MaxSize:    l.MaxAge,
 		MaxBackups: l.MaxBackups,
 		MaxAge:     l.MaxAge,
+		LocalTime:  l.LocalTime,
 		Compress:   l.Compress,
 	}
 

@@ -13,10 +13,9 @@ import (
 	"github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/logger"
 	internalhttp "github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/server/http"
 	"github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/storage"
-	"go.uber.org/zap"
-
 	memorystorage "github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/storage/memory"
 	databasestorage "github.com/gadzira/home_work_melnichenko/hw12_13_14_15_calendar/internal/storage/sql"
+	"go.uber.org/zap"
 )
 
 var configFile string
